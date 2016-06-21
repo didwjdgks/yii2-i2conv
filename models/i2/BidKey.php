@@ -1,6 +1,8 @@
 <?php
 namespace i2conv\models\i2;
 
+use yii\db\Query;
+
 use i2conv\Module;
 
 class BidKey extends \yii\db\ActiveRecord
@@ -26,6 +28,10 @@ class BidKey extends \yii\db\ActiveRecord
     if($this->notinum) $this->notinum=iconv('euckr','utf-8',$this->notinum);
     if($this->constnm) $this->constnm=iconv('euckr','utf-8',$this->constnm);
     if($this->org_i) $this->org_i=iconv('euckr','utf-8',$this->org_i);
+  }
+
+  public function getValue(){
+    return $this->hasOne(BidValue::className(),['bidid'=>'bidid']);
   }
 
   public function getRes(){
@@ -69,9 +75,9 @@ class BidKey extends \yii\db\ActiveRecord
       'succls'=>$this->succls,
       'conlevel'=>$this->toV3BidKey_conlevel(),
       'ulevel'=>$this->opt,
-      //concode=>$this->concode,
-      //sercode=>
-      //purcode=>
+      'concode'=>$this->toV3BidKey_concode(),
+      'sercode'=>$this->toV3BidKey_sercode(),
+      'purcode'=>$this->toV3BidKey_purcode(),
       'location'=>$this->location?$this->location:0,
       'convention'=>$this->convention=='3'?'2':$this->convention,
       'presum'=>$this->presum?$this->presum:0,
@@ -88,6 +94,109 @@ class BidKey extends \yii\db\ActiveRecord
       'state'=>$this->state,
       'in_id'=>91,
     ];
+  }
+
+  public function toV3BidKey_concode(){
+    $concode=0;
+    if(empty($this->concode) or strpos($this->concode,'C')===false){
+      return 0;
+    }
+    $i2_codes=explode('|',$this->concode);
+    $rows=(new Query())->from('code_item_i')
+      ->innerJoin('code_item','code_item.i_code=code_item_i.code')
+      ->select('code_item_i.itemcode')
+      ->where([
+          'code_item.i2_code'=>$i2_codes,
+        ])
+      ->all(static::getDb());
+    foreach($rows as $row){
+      if(($concode&pow(2,$row['itemcode']))==0) $concode+=pow(2,$row['itemcode']);
+      switch($row['itemcode']){
+      case 40:
+      case 41:
+      case 42:
+      case 43:
+        if(($concode&pow(2,7))==0) $concode+=pow(2,7);
+        break;
+      }
+    }
+    return $concode;
+  }
+
+  public function toV3BidKey_sercode(){
+    $sercode=0;
+    if(empty($this->sercode) or strpos($this->sercode,'S')===false){
+      return 0;
+    }
+    $i2_codes=explode('|',$this->sercode);
+    $rows=(new Query())->from('code_item_i')
+      ->innerJoin('code_item','code_item.i_code=code_item_i.code')
+      ->select('code_item_i.itemcode')
+      ->where([
+          'code_item.i2_code'=>$i2_codes,
+        ])
+      ->all(static::getDb());
+    foreach($rows as $row){
+      if(($sercode&pow(2,$row['itemcode']))==0) $sercode+=pow(2,$row['itemcode']);
+      switch($row['itemcode']){
+      case 32:
+      case 33:
+      case 34:
+        if(($sercode&pow(2,3))==0) $sercode+=pow(2,3);
+        break;
+      case 54:
+        if(($sercode&pow(2,9))==0) $sercode+=pow(2,9);
+        break;
+      case 62:
+        if(($sercode&pow(2,22))==0) $sercode+=pow(2,22);
+        break;
+      }
+    }
+    return $sercode;
+  }
+
+  public function toV3BidKey_purcode(){
+    $purcode=0;
+    if(empty($this->purcode) or strpos($this->purcode,'P')===false) return 0;
+    
+    $i2_codes=explode('|',$this->purcode);
+    $rows=(new Query())->from('code_item_i')
+      ->innerJoin('code_item','code_item.i_code=code_item_i.code')
+      ->select('code_item_i.itemcode')
+      ->where(['code_item.i2_code'=>$i2_codes])
+      ->all(static::getDb());
+    foreach($rows as $row){
+      if(($purcode&pow(2,$row['itemcode']))==0) $purcode+=pow(2,$row['itemcode']);
+    }
+    return $purcode;
+  }
+
+  public function toV3BidItemcodes_attributes(){
+    $i2_codes=[];
+    if(!empty($this->concode) and strpos($this->concode,'C')===0){
+      $i2_codes=array_merge($i2_codes,explode('|',$this->concode));
+    }
+    if(!empty($this->sercode) and strpos($this->sercode,'S')===0){
+      $i2_codes=array_merge($i2_codes,explode('|',$this->sercode));
+    }
+    if(!empty($this->purcode) and strpos($this->purcode,'P')===0){
+      $i2_codes=array_merge($i2_codes,explode('|',$this->purcode));
+    }
+    $rows=(new Query())->from('code_item_i')
+      ->innerJoin('code_item','code_item.i_code=code_item_i.code')
+      ->select('code_item_i.code,code_item_i.name,code_item_i.bidtype')
+      ->where(['code_item.i2_code'=>$i2_codes])
+      ->all(static::getDb());
+    $attrs=[];
+    foreach($rows as $row){
+      $attrs[]=[
+        'bidtype'=>$row['bidtype'],
+        'code'=>$row['code'],
+        'name'=>iconv('euckr','utf-8',$row['name']),
+      ];
+    }
+
+    return $attrs;
   }
 }
 

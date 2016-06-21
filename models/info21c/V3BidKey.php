@@ -40,5 +40,25 @@ class V3BidKey extends \yii\db\ActiveRecord
       [['closedate','constdate','writedate','reswdate','state','in_id'],'safe'],
     ];
   }
+
+  public function getV3BidValue(){
+    return $this->hasOne(V3BidValue::className(),['bidid'=>'bidid']);
+  }
+
+  public function getV3BidContent(){
+    return $this->hasOne(V3BidContent::className(),['bidid'=>'bidid']);
+  }
+
+  public function getV3BidResult(){
+    return $this->hasOne(V3BidResult::className(),['bidid'=>'bidid']);
+  }
+
+  public function getV3BidLocals(){
+    return $this->hasMany(V3BidLocal::className(),['bidid'=>'bidid']);
+  }
+
+  public function getV3BidGoods(){
+    return $this->hasMany(V3BidGoods::className(),['bidid'=>'bidid']);
+  }
 }
 

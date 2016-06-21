@@ -10,6 +10,7 @@ class Module extends \yii\base\Module
   public $infodb='infodb';
 
   public $gman_server;
+  public $redis_server;
 
   public function init(){
     parent::init();

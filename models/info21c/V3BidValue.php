@@ -23,7 +23,7 @@ class V3BidValue extends \yii\db\ActiveRecord
       if($this->bidqorg) $this->bidqorg=iconv('utf-8','cp949',$this->bidqorg);
       if($this->origin_lnk) $this->origin_lnk=iconv('utf-8','cp949',$this->origin_lnk);
       if($this->attchd_lnk) $this->attchd_lnk=iconv('utf-8','cp949',$this->attchd_lnk);
-      if($this->prem) $this->perm=iconv('utf-8','cp949',$this->perm);
+      if($this->perm) $this->perm=iconv('utf-8','cp949',$this->perm);
       return true;
     }else{
       return false;
@@ -40,7 +40,7 @@ class V3BidValue extends \yii\db\ActiveRecord
     if($this->bidqorg) $this->bidqorg=iconv('cp949','utf-8',$this->bidqorg);
     if($this->origin_lnk) $this->origin_lnk=iconv('cp949','utf-8',$this->origin_lnk);
     if($this->attchd_lnk) $this->attchd_lnk=iconv('cp949','utf-8',$this->attchd_lnk);
-    if($this->prem) $this->perm=iconv('cp949','utf-8',$this->perm);
+    if($this->perm) $this->perm=iconv('cp949','utf-8',$this->perm);
   }
 
   public function rules(){
