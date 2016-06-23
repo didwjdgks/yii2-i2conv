@@ -11,6 +11,23 @@ class V3BidItemcode extends \yii\db\ActiveRecord
     return \i2conv\Module::getInstance()->infodb;
   }
 
+  public static function findNew($bidid,$bidtype,$code){
+    $obj=static::findOne([
+      'bidid'=>$bidid,
+      'bidtype'=>$bidtype,
+      'code'=>$code,
+    ]);
+    if($obj===null){
+      $obj=\Yii::createObject([
+        'class'=>static::className(),
+        'bidid'=>$bidid,
+        'bidtype'=>$bidtype,
+        'code'=>$code,
+      ]);
+    }
+    return $obj;
+  }
+
   public function rules(){
     return [
       [['bidid','bidtype','code'],'required'],

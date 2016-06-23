@@ -43,9 +43,11 @@ class LegacyController extends \yii\console\Controller
     while($worker->work());
   }
 
+  private $_workload;
   public function i2conv_legacy($job){
     $workload=$job->workload();
     $workload=Json::decode($workload);
+    $this->_workload=$workload;
 
     try {
       $this->module->i2db->close();
@@ -66,7 +68,7 @@ class LegacyController extends \yii\console\Controller
       $this->stdout("[$v3bidkey->notinum]($v3bidkey->state,$v3bidkey->bidproc)");
       $this->stdout(empty($v3bidvalue->keyid)?"[NEW]\n":"\n",Console::FG_RED);
 
-      Yii::trace('v3_bid_key: '.VarDumper::dumpAsString($v3bidey->attributes));
+      Yii::trace('v3_bid_key: '.VarDumper::dumpAsString($v3bidey->attributes),'legacy');
 
       switch($v3bidkey->bidtype){
       case 'con':
@@ -97,6 +99,8 @@ class LegacyController extends \yii\console\Controller
   }
 
   private function update_old($v3key,$bidtype){
+    $workload=$this->_workload;
+
     if($bidtype==='con'){
       $keyClass=ConKey::className();
       $valClass=ConValue::className();
@@ -119,6 +123,10 @@ class LegacyController extends \yii\console\Controller
       case '52': $succomClass=KrSucCom::className(); break;
     }
 
+    list($bidno,$bidseq,$rebidno,$divno)=explode('-',$v3key->bidid);
+    //----------------------------------------------
+    // xxxKey
+    //----------------------------------------------
     $v3val=$v3key->v3BidValue;
     $tkey=$keyClass::findNew($v3val->keyid);
     $tkey->attributes=[
@@ -165,14 +173,17 @@ class LegacyController extends \yii\console\Controller
       case '80': $tkey->contract_sys='실적'; break;
       default: $tkey->contract_sys='';
     }
-    Yii::trace($keyClass.':'.VarDumper::dumpAsString($tkey->attributes));
-    //$tkey->save();
+    Yii::trace($keyClass.':'.VarDumper::dumpAsString($tkey->attributes),'legacy');
+    if(ArrayHelper::keyExists('save',$workload)) $tkey->save();
 
     if($tkey->isNewRecord){
       $v3val->keyid=$tkey->id;
-      //$v3val->save();
+      if(ArrayHelper::keyExists('save',$workload)) $v3val->save();
     }
 
+    //----------------------------------------------------
+    // xxxValue
+    //----------------------------------------------------
     $tval=$valClass::findNew($tkey->id);
     $tval->attributes=[
       'parent'=>0,
@@ -194,11 +205,29 @@ class LegacyController extends \yii\console\Controller
         $tval->{'multispare'.($i+1)}=$m;
       }
     }
-    Yii::trace($valClass.': '.VarDumper::dumpAsString($tval->attributes));
-    //$tval->save();
+    if(($v3key->ulevel&pow(2,1))>0){
+      $prev=V3BidValue::find()
+        ->where("bidid like '{$bidno}%' and bidid<'{$v3key->bidid}'")
+        ->orderBy('bidid desc')
+        ->limit(1)
+        ->one();
+      if($prev!==null){
+        $tval->parent=$prev->keyid;
+        $parent=$valClass::findOne($prev->keyid);
+        if($parent!==null){
+          $parent->sun=$tval->id;
+          if(ArrayHelper::keyExists('save',$workload)) $parent->save();
+        }
+      }
+    }
+    Yii::trace($valClass.': '.VarDumper::dumpAsString($tval->attributes),'legacy');
+    if(ArrayHelper::keyExists('save',$workload)) $tval->save();
 
     $v3res=$v3key->v3BidResult;
     if($v3res!==null and ArrayHelper::isIn($v3key->bidproc,['S','F'])){
+      //--------------------------------------------------
+      // xxxSucKey
+      //--------------------------------------------------
       $tskey=$skeyClass::findNew($v3res->sucid);
       $tskey->attributes=[
         'item_code'=>$tkey->item_code,
@@ -224,17 +253,17 @@ class LegacyController extends \yii\console\Controller
         'whereis'=>$tkey->whereis,
         'state'=>$tkey->state,
       ];
-      Yii::trace($skeyClass.': '.VarDumper::dumpAsString($tskey->attributes));
-      //$tskey->save();
+      Yii::trace($skeyClass.': '.VarDumper::dumpAsString($tskey->attributes),'legacy');
+      if(ArrayHelper::keyExists('save',$workload)) $tskey->save();
 
       if($tskey->isNewRecord){
         $v3res->sucid=$tskey->id;
-        //$v3res->save();
+        if(ArrayHelper::keyExists('save',$workload)) $v3res->save();
       }
 
-      /**
-       * XxxSucValue
-       */
+      //-------------------------------------------------
+      // xxxSucValue
+      //-------------------------------------------------
       $tsval=$svalClass::findNew($tskey->id);
       $tsval->attributes=[
         'selms'=>$v3res->selms,
@@ -248,17 +277,19 @@ class LegacyController extends \yii\console\Controller
         if($i>14) break;
         $tsval->{'multispare'.($i+1)}=$m;
       }
-      Yii::trace($svalClass.': '.VarDumper::dumpAsString($tsval->attributes));
-      //$tsval->save();
+      Yii::trace($svalClass.': '.VarDumper::dumpAsString($tsval->attributes),'legacy');
+      if(ArrayHelper::keyExists('save',$workload)) $tsval->save();
 
-      /**
-       * XxxSucCom
-       */
-      //$succomClass::deleteAll(['id'=>$tskey->id]);
-      //KepcoSucCom::deleteAll(['id'=>$tskey->id,'bidtype'=>$bidtype]);
-      //JuSucCom::deleteAll(['id'=>$tskey->id]);
-      //DpaSucCom::deleteAll(['id'=>$tskey->id,'bidtype'=>$bidtype]);
-      //KrSucCom::deleteAll(['id'=>$tskey->id]);
+      //--------------------------------------------------
+      // xxxSucCom
+      //--------------------------------------------------
+      if(ArrayHelper::keyExists('save',$workload)){
+        $succomClass::deleteAll(['id'=>$tskey->id]);
+        KepcoSucCom::deleteAll(['id'=>$tskey->id,'bidtype'=>$bidtype]);
+        JuSucCom::deleteAll(['id'=>$tskey->id]);
+        DpaSucCom::deleteAll(['id'=>$tskey->id,'bidtype'=>$bidtype]);
+        KrSucCom::deleteAll(['id'=>$tskey->id]);
+      }
       $succoms=V3BidSuccom::findAll([
         'constdate'=>$v3key->constdate,
         'bidid'=>$v3key->bidid,
@@ -334,8 +365,8 @@ class LegacyController extends \yii\console\Controller
             ]);
         }
         if($tsuccom!==null){
-          //$tsuccom->save();
-          Yii::trace($succomClass.': '.VarDumper::dumpAsString($tsuccom->attributes));
+          Yii::trace($succomClass.': '.VarDumper::dumpAsString($tsuccom->attributes),'legacy');
+          if(ArrayHelper::keyExists('save',$workload)) $tsuccom->save();
         }
         Console::updateProgress($n,$innum);
         $n++;
@@ -345,6 +376,7 @@ class LegacyController extends \yii\console\Controller
   }
 
   private function update_pur($v3key){
+    $workload=$this->_workload;
     if(empty($v3key->writedate) or $v3key->writedate=='0000-00-00') return;
     $v3val=$v3key->v3BidValue;
     $keyid=$v3val->keyid;
@@ -442,10 +474,13 @@ class LegacyController extends \yii\console\Controller
     $pm->lockeyword=implode(',',$lockeywords);
 
     Yii::trace('pur_master: '.VarDumper::dumpAsString($pm->attributes),'legacy');
-    //$pm->save();
+    if(ArrayHelper::keyExists('save',$workload)) $pm->save();
 
     $v3ctn=$v3key->v3BidContent;
 
+    //----------------------------------------------
+    // pur_file_data
+    //----------------------------------------------
     $pfd=$pm->purFileData;
     if($pfd===null){
       $pfd=new PurFileData([
@@ -463,8 +498,11 @@ class LegacyController extends \yii\console\Controller
     }
     $pfd->urlinfo1=$v3val->origin_lnk;
     $pfd->linkdata=$v3val->attchd_lnk;
-    //$pfd->save();
+    if(ArrayHelper::keyExists('save',$workload)) $pfd->save();
 
+    //----------------------------------------------
+    // pur_g2b_goods
+    //----------------------------------------------
     $v3goods=$v3key->v3BidGoods;
     foreach($v3goods as $g){
       $pgg=PurG2bGoods::findOne([
@@ -486,9 +524,12 @@ class LegacyController extends \yii\console\Controller
         'g2b_myung'=>$g->gname,
       ];
       Yii::trace('pur_g2b_goods: '.VarDumper::dumpAsString($pgg->attributes),'legacy');
-      //$pgg->save();
+      if(ArrayHelper::keyExists('save',$workload)) $pgg->save();
     }
 
+    //---------------------------------------------
+    // pur_res
+    //---------------------------------------------
     $v3res=$v3key->v3BidResult;
     if($v3res!==null and ArrayHelper::isIn($v3key->bidproc,['R','S','F'])){
       $pres=PurRes::findOne([
@@ -540,13 +581,14 @@ class LegacyController extends \yii\console\Controller
       $pm->successname=$v3res->officenm1;
 
       Yii::trace('pur_res: '.VarDumper::dumpAsString($pres->attributes),'legacy');
+      if(ArrayHelper::keyExists('save',$workload)) $pres->save();
 
       if($v3key->bidproc==='S'){
         $v3succoms=V3BidSuccom::findAll([
           'constdate'=>$v3key->constdate,
           'bidid'=>$v3key->bidid,
         ]);
-        //PurResEnterprise::deleteAll(['id'=>$pm->id]);
+        if(ArrayHelper::keyExists('save',$workload)) PurResEnterprise::deleteAll(['id'=>$pm->id]);
         $innum=count($v3succoms);
         $n=1;
         Console::startProgress(0,$innum);
@@ -564,7 +606,7 @@ class LegacyController extends \yii\console\Controller
             'bunryuno'=>1,
           ]);
           Yii::trace('pur_res_enterprise: '.VarDumper::dumpAsString($pen->attributes),'legacy');
-          //$pen->save();
+          if(ArrayHelper::keyExists('save',$workload)) $pen->save();
           Console::updateProgress($n,$innum);
           $n++;
         }
@@ -573,7 +615,7 @@ class LegacyController extends \yii\console\Controller
     }
 
     $v3val->keyid=$pm->id;
-    //$v3val->save();
+    if(ArrayHelper::keyExists('save',$workload)) $v3val->save();
   }
 }
 

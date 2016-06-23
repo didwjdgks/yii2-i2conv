@@ -13,6 +13,17 @@ class V3BidValue extends \yii\db\ActiveRecord
     return Module::getInstance()->infodb;
   }
 
+  public static function findNew($bidid){
+    $obj=static::findOne($bidid);
+    if($obj===null){
+      $obj=\Yii::createObject([
+        'class'=>static::className(),
+        'bidid'=>$bidid,
+      ]);
+    }
+    return $obj;
+  }
+
   public function beforeSave($insert){
     if(parent::beforeSave($insert)){
       if($this->constno) $this->constno=iconv('utf-8','cp949',$this->constno);
