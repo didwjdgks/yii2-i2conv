@@ -14,7 +14,7 @@ class ConKey extends \yii\db\ActiveRecord
   public static function findNew($id){
     $instance=static::findOne($id);
     if($instance===null){
-      $instance=new ConKey(['id'=>$id]);
+      $instance=new ConKey();
     }
     return $instance;
   }

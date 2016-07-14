@@ -21,10 +21,10 @@ class ConSucValue extends \yii\db\ActiveRecord
 
   public function rules(){
     return [
-      [['parent','sun','multispare1','multispare2','multispare3','multispare4'],'safe'],
-      [['multispare5','multispare6','multispare7','multispare8','multispare9'],'safe'],
-      [['multispare10','multispare11','multispare12','multispare13','multispare14'],'safe'],
-      [['multispare15','selms','original_link'],'safe'],
+      [['multispare1','multispare2','multispare3','multispare4','multispare5'],'default','value'=>'0'],
+      [['multispare6','multispare7','multispare8','multispare9','multispare10'],'default','value'=>'0'],
+      [['multispare11','multispare12','multispare13','multispare14','multispare15'],'default','value'=>'0'],
+      [['parent','sun','selms','original_link'],'safe'],
       [['filename1','filename2','filename3'],'safe'],
     ];
   }

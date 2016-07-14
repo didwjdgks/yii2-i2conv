@@ -14,7 +14,7 @@ class SerKey extends \yii\db\ActiveRecord
   public static function findNew($id){
     $instance=static::findOne($id);
     if($instance===null){
-      $instance=new SerKey(['id'=>$id]);
+      $instance=new SerKey();
     }
     return $instance;
   }

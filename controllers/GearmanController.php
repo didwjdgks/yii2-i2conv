@@ -187,19 +187,18 @@ class GearmanController extends \yii\console\Controller
       //------------------------------------------------------
       // v3_bid_itemcode
       //------------------------------------------------------
-      if(ArrayHelper::keyExists('save',$workload)) V3BidItemcode::deleteAll(['bidid'=>$v3bidkey->bidid]);
+      V3BidItemcode::deleteAll(['bidid'=>$v3bidkey->bidid]);
       $bidItemcodes=$bidKey->toV3BidItemcodes_attributes();
       foreach($bidItemcodes as $row){
         $v3BidItemcode=V3BidItemcode::findNew($v3bidkey->bidid,$row['bidtype'],$row['code']);
         $v3BidItemcode->name=$row['name'];
-        Yii::trace('v3_bid_itemcode: '.VarDumper::dumpAsString($v3BidItemcode->attributes),'i2conv');
-        if(ArrayHelper::keyExists('save',$workload)) $v3BidItemcode->save();
+        $v3BidItemcode->save();
       }
 
       //------------------------------------------------------
       // v3_bid_local
       //------------------------------------------------------
-      if(ArrayHelper::keyExists('save',$workload)) V3BidLocal::deleteAll(['bidid'=>$v3bidkey->bidid]);
+      V3BidLocal::deleteAll(['bidid'=>$v3bidkey->bidid]);
       $bidlocals=$bidKey->bidLocals;
       foreach($bidlocals as $bidlocal){
         $v3BidLocal=new V3BidLocal([
@@ -207,14 +206,13 @@ class GearmanController extends \yii\console\Controller
           'code'  =>$bidLocal->code,
           'name'  =>$bidLocal->name,
         ]);
-        Yii::trace('v3_bid_local: '.VarDumper::dumpAsString($v3BidLocal->attributes),'i2conv');
-        if(ArrayHelper::keyExists('save',$workload)) $v3BidLocal->save();
+        $v3BidLocal->save();
       }
 
       //------------------------------------------------------
       // v3_bid_subcode
       //------------------------------------------------------
-      if(ArrayHelper::keyExists('save',$workload)) V3BidSubcode::deleteAll(['bidid'=>$v3bidkey->bidid]);
+      V3BidSubcode::deleteAll(['bidid'=>$v3bidkey->bidid]);
       $subcodes=$bidKey->bidSubcodes;
       foreach($subcodes as $subcode){
         $v3BidSubcode=new V3BidSubcode([
@@ -226,8 +224,7 @@ class GearmanController extends \yii\console\Controller
           'pri_cont'=>$subcode->pri_cont,
           'share'   =>$subcode->share,
         ]);
-        Yii::trace('v3_bid_subcode: '.VarDumper::dumpAsString($v3BidSubcode->attributes),'i2conv');
-        if(ArrayHelper::keyExists('save',$workload)) $v3BidSubcode->save();
+        $v3BidSubcode->save();
       }
 
 
@@ -245,7 +242,7 @@ class GearmanController extends \yii\console\Controller
           'upfile_suc'=>$bidcontent->nbid_file,
           'important_bid'=>!empty($bidcontent->bidcomment_mod)?$bidcontent->bidcomment_mod.'\n<hr/>\n'.$bidcontent->bidcomment:$bidcontent->bidcomment,
         ];
-        if(ArrayHelper::keyExists('save',$workload)) $v3content->save();
+        $v3content->save();
 
         $v3BidValue->origin_lnk=$bidcontent->orign_lnk;
         $v3BidValue->attchd_lnk=$bidcontent->attchd_lnk;
@@ -255,12 +252,11 @@ class GearmanController extends \yii\console\Controller
       // v3_bid_goods
       //-----------------------------------------------------
       $bidGoods=$bidKey->bidGoods;
-      if(ArrayHelper::keyExists('save',$workload)) V3BidGoods::deleteAll(['bidid'=>$v3bidkey->bidid]);
+      V3BidGoods::deleteAll(['bidid'=>$v3bidkey->bidid]);
       foreach($bidGoods as $g){
         $v3BidGood=new V3BidGoods;
         $v3BidGood->attributes=$g->attributes;
-        Yii::trace('v3_bid_goods: '.VarDumper::dumpAsString($v3BidGood->attributes),'i2conv');
-        if(ArrayHelper::keyExists('save',$workload)) $v3BidGood->save();
+        $v3BidGood->save();
       }
 
       //-------------------------------------------------------
@@ -280,25 +276,24 @@ class GearmanController extends \yii\console\Controller
           'resdt'     =>(strtotime($bidKey->resdt)>0)?strtotime($bidKey->resdt):0,
           'reswdt'    =>(strtotime($bidRes->reswdt)>0)?strtotime($bidRes->reswdt):0,
         ];
-        $arr=explode('|',$bidREs->selms);
+        $arr=explode('|',$bidRes->selms);
         $selms=[];
         foreach($arr as $v){
           if($v=='') continue;
           $selms[]=intval($v)-1;
         }
         $v3BidResult->selms=implode('-',$selms);
-        Yii::trace('v3_bid_result: '.VarDumper::dumpAsString($v3BidResult->attributes),'i2conv');
-        if(ArrayHelper::keyExists('save',$workload)) $v3BidResult->save();
+        $v3BidResult->save();
 
         if($bidKey->whereis!='08' && $bidKey->bidproc!='F'){
           $v3BidValue->multispare=str_replace('|','/',str_replace(',','',$bidRes->multispare));
         }
-        if(ArrayHelper::keyExists('save',$workload)) $v3BidValue->save();
+        $v3BidValue->save();
         
         if($bidRes->innum>0){
           $succoms=$bidKey->succoms;
           if(count($succoms)==$bidRes->innum){
-            if(ArrayHelper::keyExists('save',$workload)) V3BidSuccom::deleteAll(['constdate'=>$v3bidkey->constdate,'bidid'=>$v3bidkey->bidid]);
+            V3BidSuccom::deleteAll(['constdate'=>$v3bidkey->constdate,'bidid'=>$v3bidkey->bidid]);
             Console::startProgress(0,$bidRes->innum);
             $n=1;
             foreach($succoms as $s){
@@ -307,17 +302,16 @@ class GearmanController extends \yii\console\Controller
                 'constdate' =>$v3bidkey->constdate,
                 'bidid'     =>$v3bidkey->bidid,
                 'seq'       =>$s->seq,
-                'regdt'     =>$s->regdt,
+                'regdt'     =>strtotime($s->regdt)>0?strtotime($s->regdt):0,
                 'pct'       =>$s->pct,
-                'prenm'     =>$s->prenm,
+                'prenm'     =>$s->prenm==null?'':$s->prenm,
                 'officenm'  =>$s->officenm,
                 'officeno'  =>$s->officeno,
                 'success'   =>$s->success,
                 'etc'       =>$s->etc,
                 'rank'      =>$s->rank,
               ]);
-              Yii::trace('v3_bid_succom: '.VarDumper::dumpAsString($v3succom->attributes),'i2conv');
-              if(ArrayHelper::keyExists('save',$workload)) $v3succom->save();
+              $v3succom->save();
 
               Console::updateProgress($n,$bidRes->innum);
               $n++;
@@ -327,10 +321,8 @@ class GearmanController extends \yii\console\Controller
         }
       }
 
-      Yii::trace('v3_bid_value: '.VarDumper::dumpAsString($v3BidValue->attributes),'i2conv');
-      Yii::trace('v3_bid_key: '.VarDumper::dumpAsString($v3bidkey->attributes),'i2conv');
-      if(ArrayHelper::keyExists('save',$workload)) $v3BidValue->save();
-      if(ArrayHelper::keyExists('save',$workload)) $v3bidkey->save();
+      $v3BidValue->save();
+      $v3bidkey->save();
 
       $gman_client=new GearmanClient;
       $gman_client->addServers($this->module->gman_server);
@@ -338,7 +330,13 @@ class GearmanController extends \yii\console\Controller
     }
     catch(\Exception $e){
       echo Console::ansiFormat($e,[Console::FG_RED]),PHP_EOL;
-      exit;
+      Yii::error($e,'i2conv');
+      $gman_client=new GearmanClient;
+      $gman_client->addServers('192.168.1.242');
+      $gman_client->doBackground('send_chat_message_from_admin',Json::encode([
+        'recv_id'=>149, //양정한
+        'message'=>iconv('cp949','utf-8',$e)."\n[i2conv]",
+      ]));
     }
 
     $this->stdout(sprintf("[%s] Peak memory usage: %s MB\n",date('Y-m-d H:i:s'),(memory_get_peak_usage(true)/1024/1024)),Console::FG_GREY);

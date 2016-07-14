@@ -47,8 +47,9 @@ class V3BidKey extends \yii\db\ActiveRecord
 
   public function rules(){
     return [
-      [['whereis','bidtype','con','ser','pur','notinum','orgcode','constnm','org'],'safe'],
-      [['bidproc','contract','bidcls','succls','conlevel','ulevel'],'safe'],
+      [['orgcode','org','contract'],'default','value'=>''],
+      [['whereis','bidtype','con','ser','pur','notinum','orgcode','constnm',],'safe'],
+      [['bidproc','bidcls','succls','conlevel','ulevel'],'safe'],
       [['concode','sercode','purcode','location','convention'],'safe'],
       [['presum','basic','pct','registdate','explaindate','agreedate','opendate'],'safe'],
       [['closedate','constdate','writedate','reswdate','state','in_id'],'safe'],

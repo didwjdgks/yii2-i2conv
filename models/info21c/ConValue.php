@@ -21,7 +21,8 @@ class ConValue extends \yii\db\ActiveRecord
 
   public function rules(){
     return [
-      [['parent','sun','multispare1','multispare2','multispare3','multispare4'],'safe'],
+      [['par_basic','parent','sun'],'default','value'=>'0'],
+      [['multispare1','multispare2','multispare3','multispare4'],'safe'],
       [['multispare5','multispare6','multispare7','multispare8','multispare9'],'safe'],
       [['multispare10','multispare11','multispare12','multispare13','multispare14'],'safe'],
       [['multispare15','hyup_enddate','selms','original_link'],'safe'],

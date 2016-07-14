@@ -41,8 +41,9 @@ class PurFileData extends \yii\db\ActiveRecord
   public function rules(){
     return [
       [['id','subseq'],'required'],
+      [['maincontents'],'default','value'=>''],
       [['linkdata','linkdata2','filedata1','jungjungdata'],'safe'],
-      [['maincontents','urlinfo1','urlinfo2','openbid_contents'],'safe'],
+      [['urlinfo1','urlinfo2','openbid_contents'],'safe'],
     ];
   }
 }

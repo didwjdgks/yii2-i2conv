@@ -14,7 +14,7 @@ class KepcoSucCom extends \yii\db\ActiveRecord
   public function rules(){
     return [
       [['id','bidtype','seq','pre_name'],'required'],
-      [['officeno','officename','rank','success','pct','ext1','ext2'],'safe'],
+      [['officeno','officename','success','pct','ext1','ext2'],'safe'],
     ];
   }
 

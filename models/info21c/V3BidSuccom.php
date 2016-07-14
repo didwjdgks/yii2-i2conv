@@ -31,8 +31,9 @@ class V3BidSuccom extends \yii\db\ActiveRecord
   public function rules(){
     return [
       [['bidid','seq','constdate'],'required'],
-      [['officeno','officenm','prenm','success','pct'],'safe'],
-      [['regdt','rank','selms','etc'],'safe'],
+      [['officeno','pct','officenm','prenm','etc','selms'],'default','value'=>''],
+      [['success'],'default','value'=>'0'],
+      [['regdt','rank'],'safe'],
     ];
   }
 

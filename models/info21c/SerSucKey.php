@@ -21,8 +21,10 @@ class SerSucKey extends \yii\db\ActiveRecord
 
   public function rules(){
     return [
+      [['success','yega'],'default','value'=>'0'],
+      [['success_name'],'default','value'=>''],
       [['item_code','location','constname','organization','notinum'],'safe'],
-      [['contract_sys','basic','presum','yega','success','success_name'],'safe'],
+      [['contract_sys','basic','presum'],'safe'],
       [['constdate','writedate','registdate','ulevel','in_id','whereis'],'safe'],
       [['state','pct','par_basic','level_cnt','org_code'],'safe'],
     ];

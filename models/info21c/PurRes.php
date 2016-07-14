@@ -11,6 +11,10 @@ class PurRes extends \yii\db\ActiveRecord
     return \i2conv\Module::getInstance()->infodb;
   }
 
+  public static function primaryKey(){
+    return ['id'];
+  }
+
   public function rules(){
     return [
       [['id'],'required'],
